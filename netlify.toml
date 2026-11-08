@@ -1,10 +1,13 @@
 # Beyond Learning — Netlify (GitHub continuous deployment)
 # Connect this repo in Netlify → leave Base directory empty (repo root).
 # Production branch: main | Branch deploys: staging, dev
+#
+# Site is a static Next.js export (apps/web/out). Official domain spelling:
+# beyondlearrning.com (double "rr").
 
 [build]
   command = "pnpm --filter web build"
-  publish = "apps/web/.next"
+  publish = "apps/web/out"
   # Skip builds that don't touch the web app or workspace install graph
   ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- apps/web package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json .npmrc netlify.toml"
 
@@ -24,3 +27,9 @@
 # Pull request previews
 [context.deploy-preview]
   command = "pnpm --filter web build"
+
+# Pretty URLs for static export (serve /about/ → about/index.html)
+[[redirects]]
+  from = "/*"
+  to = "/404.html"
+  status = 404
