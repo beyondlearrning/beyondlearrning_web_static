@@ -5,6 +5,8 @@
  * No website/domain URL is listed because none has been confirmed.
  */
 const phone = "7898228178";
+/** India (+91) — required for WhatsApp; office address is Indore, MP. */
+const whatsappCountryCode = "91";
 
 export const contact = {
   brand: "BEYOND LEARRNING",
@@ -26,3 +28,6 @@ export const emailHref = `mailto:${contact.email}`;
  * client explicitly confirms one.
  */
 export const phoneHref = `tel:${phone}`;
+
+/** Direct WhatsApp chat link (international format). */
+export const whatsappHref = `https://wa.me/${whatsappCountryCode}${phone}`;
