@@ -1,0 +1,26 @@
+# Beyond Learning — Netlify (GitHub continuous deployment)
+# Connect this repo in Netlify → leave Base directory empty (repo root).
+# Production branch: main | Branch deploys: staging, dev
+
+[build]
+  command = "pnpm --filter web build"
+  publish = "apps/web/.next"
+  # Skip builds that don't touch the web app or workspace install graph
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- apps/web package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json .npmrc netlify.toml"
+
+[build.environment]
+  NODE_VERSION = "22"
+  # Required for Next.js + pnpm on Netlify (see also root .npmrc)
+  PNPM_FLAGS = "--shamefully-hoist"
+
+# Production = main
+[context.production]
+  command = "pnpm --filter web build"
+
+# Branch deploys for staging / dev (and other non-production branches)
+[context.branch-deploy]
+  command = "pnpm --filter web build"
+
+# Pull request previews
+[context.deploy-preview]
+  command = "pnpm --filter web build"
