@@ -9,12 +9,18 @@
   command = "pnpm --filter web build"
   publish = "apps/web/out"
   # Skip builds that don't touch the web app or workspace install graph
-  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- apps/web package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json .npmrc netlify.toml"
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- apps/web package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json .npmrc netlify.toml netlify"
 
 [build.environment]
   NODE_VERSION = "22"
   # Required for Next.js + pnpm on Netlify (see also root .npmrc)
   PNPM_FLAGS = "--shamefully-hoist"
+  # Override in Netlify UI → Environment variables for production.
+  CLAT_ADMIN_PASSWORD = "beyond2027"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
 
 # Production = main
 [context.production]

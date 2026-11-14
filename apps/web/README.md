@@ -36,4 +36,7 @@ To run a command for this app only, use `pnpm --filter web <script>`.
 - `src/content/courses.ts` — the four course areas (CLAT UG, AILET, CLAT PG, Judiciary)
 - `src/content/founder.ts` — Founder's Note and portrait slot (`public/images/founder/`)
 - `src/content/mentorship.ts` — mentorship copy and the optional mentor profiles list
+- `src/content/clat-live.ts` — CLAT live Q&A landing copy, form options, WhatsApp group link, video slot
+- `public/videos/clat-live/` — optional promo clip (`promo.mp4` / `promo.webm`)
 - `public` — static assets
+- `/clat-live` — session registration form; `/clat-live/thanks` after submit; `/admin` submissions panel (password `beyond2027` locally; set `CLAT_ADMIN_PASSWORD` on Netlify)
