@@ -12,9 +12,35 @@ export type ClatRegistration = {
 export type ClatRegistrationInput = Omit<ClatRegistration, "id" | "createdAt">;
 
 const STORAGE_KEY = "beyond-clat-live-registrations";
+const SETTINGS_KEY = "beyond-clat-live-settings";
 
 /** Local preview password when Netlify Functions are unavailable (`pnpm dev`). */
 export const LOCAL_ADMIN_PASSWORD = "beyond2027";
+
+export type ClatLiveSettings = {
+  whatsappGroupHref: string;
+};
+
+function readLocalSettings(): ClatLiveSettings {
+  if (typeof window === "undefined") return { whatsappGroupHref: "" };
+  try {
+    const raw = window.localStorage.getItem(SETTINGS_KEY);
+    if (!raw) return { whatsappGroupHref: "" };
+    const parsed = JSON.parse(raw) as ClatLiveSettings;
+    return {
+      whatsappGroupHref:
+        typeof parsed.whatsappGroupHref === "string"
+          ? parsed.whatsappGroupHref
+          : "",
+    };
+  } catch {
+    return { whatsappGroupHref: "" };
+  }
+}
+
+function writeLocalSettings(settings: ClatLiveSettings) {
+  window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+}
 
 function readLocal(): ClatRegistration[] {
   if (typeof window === "undefined") return [];
@@ -89,6 +115,86 @@ export async function listClatRegistrations(
   }
 
   return { items: readLocal(), source: "local" };
+}
+
+/** Public settings used by the thanks page (WhatsApp group invite). */
+export async function getClatLiveSettings(): Promise<{
+  settings: ClatLiveSettings;
+  source: "api" | "local";
+}> {
+  try {
+    const response = await fetch("/api/clat-settings", { cache: "no-store" });
+    if (response.ok) {
+      const data = (await response.json()) as ClatLiveSettings;
+      return {
+        settings: {
+          whatsappGroupHref: data.whatsappGroupHref?.trim() || "",
+        },
+        source: "api",
+      };
+    }
+  } catch {
+    // Fall through to local storage when functions are offline.
+  }
+
+  return { settings: readLocalSettings(), source: "local" };
+}
+
+export async function saveClatLiveSettings(
+  password: string,
+  settings: ClatLiveSettings,
+): Promise<{ settings: ClatLiveSettings; source: "api" | "local" }> {
+  const whatsappGroupHref = settings.whatsappGroupHref.trim();
+  if (!whatsappGroupHref) {
+    throw new Error("Paste a WhatsApp group invite link.");
+  }
+
+  try {
+    const response = await fetch("/api/clat-settings", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-password": password,
+      },
+      body: JSON.stringify({ whatsappGroupHref }),
+    });
+    if (response.ok) {
+      const data = (await response.json()) as ClatLiveSettings;
+      return {
+        settings: {
+          whatsappGroupHref: data.whatsappGroupHref?.trim() || whatsappGroupHref,
+        },
+        source: "api",
+      };
+    }
+    if (response.status === 401) {
+      throw new Error("Invalid password");
+    }
+    if (response.status === 400) {
+      const data = (await response.json().catch(() => null)) as {
+        error?: string;
+      } | null;
+      throw new Error(data?.error || "Invalid WhatsApp group link.");
+    }
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      (error.message === "Invalid password" ||
+        error.message.startsWith("Paste") ||
+        error.message.startsWith("Invalid") ||
+        error.message.startsWith("Use a valid"))
+    ) {
+      throw error;
+    }
+  }
+
+  if (password !== LOCAL_ADMIN_PASSWORD) {
+    throw new Error("Invalid password");
+  }
+
+  const next = { whatsappGroupHref };
+  writeLocalSettings(next);
+  return { settings: next, source: "local" };
 }
 
 export function mockScoreLabel(value: string): string {

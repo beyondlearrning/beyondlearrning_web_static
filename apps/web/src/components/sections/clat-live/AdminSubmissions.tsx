@@ -2,10 +2,12 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import {
+  getClatLiveSettings,
   listClatRegistrations,
   LOCAL_ADMIN_PASSWORD,
   mockScoreLabel,
   questionLabel,
+  saveClatLiveSettings,
   type ClatRegistration,
 } from "@/lib/clat-live-api";
 import { cn } from "@/lib/utils";
@@ -19,6 +21,10 @@ export function AdminSubmissions() {
   const [source, setSource] = useState<"api" | "local" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [whatsappGroupHref, setWhatsappGroupHref] = useState("");
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [settingsMessage, setSettingsMessage] = useState<string | null>(null);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
 
   useEffect(() => {
     const saved = sessionStorage.getItem(SESSION_KEY);
@@ -30,9 +36,13 @@ export function AdminSubmissions() {
     setLoading(true);
     setError(null);
     try {
-      const result = await listClatRegistrations(pass);
+      const [result, settingsResult] = await Promise.all([
+        listClatRegistrations(pass),
+        getClatLiveSettings(),
+      ]);
       setItems(result.items);
       setSource(result.source);
+      setWhatsappGroupHref(settingsResult.settings.whatsappGroupHref);
       setUnlocked(true);
       sessionStorage.setItem(SESSION_KEY, pass);
     } catch {
@@ -51,12 +61,44 @@ export function AdminSubmissions() {
     await load(password.trim());
   }
 
+  async function onSaveWhatsApp(event: FormEvent) {
+    event.preventDefault();
+    const pass = sessionStorage.getItem(SESSION_KEY);
+    if (!pass) return;
+
+    setSettingsSaving(true);
+    setSettingsMessage(null);
+    setSettingsError(null);
+    try {
+      const result = await saveClatLiveSettings(pass, {
+        whatsappGroupHref,
+      });
+      setWhatsappGroupHref(result.settings.whatsappGroupHref);
+      setSettingsMessage(
+        result.source === "local"
+          ? "Saved for local preview."
+          : "WhatsApp group link saved. New registrations will use it.",
+      );
+    } catch (saveError) {
+      setSettingsError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Could not save the link.",
+      );
+    } finally {
+      setSettingsSaving(false);
+    }
+  }
+
   function lock() {
     sessionStorage.removeItem(SESSION_KEY);
     setUnlocked(false);
     setPassword("");
     setItems([]);
     setSource(null);
+    setWhatsappGroupHref("");
+    setSettingsMessage(null);
+    setSettingsError(null);
   }
 
   if (!unlocked) {
@@ -150,6 +192,49 @@ export function AdminSubmissions() {
           </button>
         </div>
       </div>
+
+      <form
+        onSubmit={onSaveWhatsApp}
+        className="mt-8 border border-border bg-surface p-5 sm:p-6"
+      >
+        <h2 className="font-display text-xl font-medium text-brand">
+          WhatsApp group link
+        </h2>
+        <p className="mt-2 text-sm text-muted">
+          Paste the real invite link. After someone submits the form, the
+          “Join group” button on the thanks page uses this URL.
+        </p>
+        <label className="mt-5 block">
+          <span className="text-xs font-semibold tracking-[0.18em] text-muted uppercase">
+            Invite URL
+          </span>
+          <input
+            type="url"
+            value={whatsappGroupHref}
+            onChange={(event) => setWhatsappGroupHref(event.target.value)}
+            placeholder="https://chat.whatsapp.com/…"
+            className="mt-2 w-full border border-border bg-background px-4 py-3 text-sm outline-none focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            required
+          />
+        </label>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <button
+            type="submit"
+            disabled={settingsSaving}
+            className="bg-brand px-4 py-2.5 text-sm font-medium tracking-wide text-background transition-colors hover:bg-brand/90 disabled:opacity-70"
+          >
+            {settingsSaving ? "Saving…" : "Save link"}
+          </button>
+          {settingsMessage ? (
+            <p className="text-sm text-brand/80">{settingsMessage}</p>
+          ) : null}
+          {settingsError ? (
+            <p className="text-sm text-red-800" role="alert">
+              {settingsError}
+            </p>
+          ) : null}
+        </div>
+      </form>
 
       {items.length === 0 ? (
         <p className="mt-10 text-sm text-muted">
