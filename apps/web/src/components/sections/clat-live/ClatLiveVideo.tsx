@@ -19,7 +19,7 @@ export function ClatLiveVideo() {
   return (
     <video
       key={src}
-      className="aspect-[9/16] h-full max-h-[min(70vh,36rem)] w-full bg-brand object-contain"
+      className="aspect-[9/16] w-full bg-black object-cover object-center"
       controls
       playsInline
       preload="metadata"
@@ -33,7 +33,7 @@ export function ClatLiveVideo() {
 
 function VideoPlaceholder() {
   return (
-    <div className="flex aspect-[9/16] max-h-[min(70vh,36rem)] w-full items-center justify-center bg-[linear-gradient(145deg,#1e3a2b_0%,#2f5340_55%,#1e3a2b_100%)] px-6 text-center">
+    <div className="flex aspect-[9/16] w-full items-center justify-center bg-[linear-gradient(145deg,#1e3a2b_0%,#2f5340_55%,#1e3a2b_100%)] px-6 text-center">
       <p className="max-w-[12rem] font-display text-xl leading-snug text-background/90 sm:text-2xl">
         Portrait intro
         <span className="mt-3 block font-sans text-sm tracking-wide text-background/65">
