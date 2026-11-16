@@ -37,7 +37,7 @@ function VideoPlaceholder() {
       <p className="max-w-sm font-display text-2xl leading-snug text-background/90 sm:text-3xl">
         30-second intro
         <span className="mt-3 block font-sans text-sm tracking-wide text-background/65">
-          Add `public/videos/clat-live/promo.mp4` to publish the clip.
+          Add `public/videos/clat-live/register-now.mp4` to publish the clip.
         </span>
       </p>
     </div>

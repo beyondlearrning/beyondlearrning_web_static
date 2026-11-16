@@ -21,11 +21,8 @@ export const clatLive = {
     body: "Join the WhatsApp group for the session link and reminders.",
     cta: "Join group",
   },
-  /**
-   * WhatsApp community / group invite for session link + reminders.
-   * Replace with the live invite URL before promoting the page.
-   */
-  whatsappGroupHref: "https://chat.whatsapp.com/",
+  /** WhatsApp community / group invite for session link + reminders. */
+  whatsappGroupHref: "https://chat.whatsapp.com/LfqbYcfTj3q9DYdqnyDHIq",
 } as const;
 
 export const mockScoreOptions = [
@@ -55,9 +52,9 @@ export const questionOptions = [
 
 export type QuestionValue = (typeof questionOptions)[number]["value"];
 
-/** Slot for the ~30s promo clip under `public/videos/clat-live/`. */
+/** Promo clip under `public/videos/clat-live/`. */
 export const clatLiveVideoSlot = {
   directory: "videos/clat-live",
-  fileName: "promo",
+  fileName: "register-now",
   extensions: ["mp4", "webm"] as const,
 } as const;
