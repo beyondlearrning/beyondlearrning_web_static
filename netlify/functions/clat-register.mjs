@@ -16,19 +16,18 @@ function json(status, body) {
 function normalize(input) {
   const name = String(input.name ?? "").trim();
   const whatsapp = String(input.whatsapp ?? "").trim();
-  const city = String(input.city ?? "").trim();
   const mockScore = String(input.mockScore ?? "").trim();
   const question = String(input.question ?? "").trim();
   const questionOther = String(input.questionOther ?? "").trim();
 
-  if (!name || !whatsapp || !city || !mockScore || !question) {
+  if (!name || !whatsapp || !mockScore || !question) {
     return null;
   }
   if (question === "other" && !questionOther) {
     return null;
   }
 
-  return { name, whatsapp, city, mockScore, question, questionOther };
+  return { name, whatsapp, mockScore, question, questionOther };
 }
 
 export default async (request) => {

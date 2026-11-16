@@ -21,7 +21,6 @@ export function ClatLiveForm() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
-  const [city, setCity] = useState("");
   const [mockScore, setMockScore] = useState<MockScoreValue | "">("");
   const [question, setQuestion] = useState<QuestionValue | "">("");
   const [questionOther, setQuestionOther] = useState("");
@@ -32,7 +31,7 @@ export function ClatLiveForm() {
     event.preventDefault();
     setError(null);
 
-    if (!name.trim() || !whatsapp.trim() || !city.trim() || !mockScore || !question) {
+    if (!name.trim() || !whatsapp.trim() || !mockScore || !question) {
       setError("Please fill in every field.");
       return;
     }
@@ -46,7 +45,6 @@ export function ClatLiveForm() {
       await submitClatRegistration({
         name: name.trim(),
         whatsapp: whatsapp.trim(),
-        city: city.trim(),
         mockScore,
         question,
         questionOther: question === "other" ? questionOther.trim() : "",
@@ -88,21 +86,6 @@ export function ClatLiveForm() {
           placeholder="10-digit mobile number"
           value={whatsapp}
           onChange={(event) => setWhatsapp(event.target.value)}
-          className={fieldClass}
-          required
-        />
-      </div>
-
-      <div>
-        <label htmlFor="clat-city" className={labelClass}>
-          City
-        </label>
-        <input
-          id="clat-city"
-          name="city"
-          autoComplete="address-level2"
-          value={city}
-          onChange={(event) => setCity(event.target.value)}
           className={fieldClass}
           required
         />

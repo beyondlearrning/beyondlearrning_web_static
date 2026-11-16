@@ -2,14 +2,18 @@ export type ClatRegistration = {
   id: string;
   name: string;
   whatsapp: string;
-  city: string;
+  /** Present on older submissions; no longer collected. */
+  city?: string;
   mockScore: string;
   question: string;
   questionOther: string;
   createdAt: string;
 };
 
-export type ClatRegistrationInput = Omit<ClatRegistration, "id" | "createdAt">;
+export type ClatRegistrationInput = Omit<
+  ClatRegistration,
+  "id" | "createdAt" | "city"
+>;
 
 const STORAGE_KEY = "beyond-clat-live-registrations";
 const SETTINGS_KEY = "beyond-clat-live-settings";

@@ -50,7 +50,7 @@ export function AdminSubmissions() {
       const haystack = [
         item.name,
         item.whatsapp,
-        item.city,
+        item.city ?? "",
         mockScoreLabel(item.mockScore),
         questionLabel(item.question, item.questionOther),
       ]
@@ -154,12 +154,11 @@ export function AdminSubmissions() {
 
   function exportCsv() {
     const rows = [
-      ["When", "Name", "WhatsApp", "City", "Mock score", "Question"],
+      ["When", "Name", "WhatsApp", "Mock score", "Question"],
       ...filtered.map((item) => [
         item.createdAt,
         item.name,
         item.whatsapp,
-        item.city,
         mockScoreLabel(item.mockScore),
         questionLabel(item.question, item.questionOther),
       ]),
@@ -335,7 +334,7 @@ export function AdminSubmissions() {
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search name, WhatsApp, city, question…"
+            placeholder="Search name, WhatsApp, question…"
             className="w-full border border-border bg-surface px-3 py-2.5 text-sm outline-none focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           />
         </label>
@@ -372,7 +371,6 @@ export function AdminSubmissions() {
                 <thead className="bg-brand/[0.04]">
                   <tr className="border-b border-border text-[0.68rem] tracking-[0.14em] text-muted uppercase">
                     <th className="px-3 py-3 font-semibold sm:px-4">Lead</th>
-                    <th className="px-3 py-3 font-semibold sm:px-4">City</th>
                     <th className="px-3 py-3 font-semibold sm:px-4">Mock</th>
                     <th className="px-3 py-3 font-semibold sm:px-4">When</th>
                   </tr>
@@ -394,9 +392,6 @@ export function AdminSubmissions() {
                           <p className="mt-0.5 text-xs text-muted">
                             {item.whatsapp}
                           </p>
-                        </td>
-                        <td className="px-3 py-3 text-brand/90 sm:px-4">
-                          {item.city}
                         </td>
                         <td className="px-3 py-3 whitespace-nowrap text-brand/90 sm:px-4">
                           {mockScoreLabel(item.mockScore)}
@@ -434,7 +429,9 @@ export function AdminSubmissions() {
                     </button>
                   }
                 />
-                <Detail label="City" value={selected.city} />
+                {selected.city ? (
+                  <Detail label="City" value={selected.city} />
+                ) : null}
                 <Detail
                   label="Latest mock score"
                   value={mockScoreLabel(selected.mockScore)}
