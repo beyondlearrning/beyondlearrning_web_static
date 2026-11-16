@@ -2,6 +2,8 @@ export type ClatRegistration = {
   id: string;
   name: string;
   whatsapp: string;
+  /** Optional on older submissions collected before email was added. */
+  email?: string;
   /** Present on older submissions; no longer collected. */
   city?: string;
   mockScore: string;
@@ -12,8 +14,8 @@ export type ClatRegistration = {
 
 export type ClatRegistrationInput = Omit<
   ClatRegistration,
-  "id" | "createdAt" | "city"
->;
+  "id" | "createdAt" | "city" | "email"
+> & { email: string };
 
 const STORAGE_KEY = "beyond-clat-live-registrations";
 const SETTINGS_KEY = "beyond-clat-live-settings";

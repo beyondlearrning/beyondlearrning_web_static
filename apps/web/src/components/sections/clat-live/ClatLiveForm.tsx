@@ -21,6 +21,7 @@ export function ClatLiveForm() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [email, setEmail] = useState("");
   const [mockScore, setMockScore] = useState<MockScoreValue | "">("");
   const [question, setQuestion] = useState<QuestionValue | "">("");
   const [questionOther, setQuestionOther] = useState("");
@@ -31,8 +32,13 @@ export function ClatLiveForm() {
     event.preventDefault();
     setError(null);
 
-    if (!name.trim() || !whatsapp.trim() || !mockScore || !question) {
+    const trimmedEmail = email.trim();
+    if (!name.trim() || !whatsapp.trim() || !trimmedEmail || !mockScore || !question) {
       setError("Please fill in every field.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setError("Please enter a valid email address.");
       return;
     }
     if (question === "other" && !questionOther.trim()) {
@@ -45,6 +51,7 @@ export function ClatLiveForm() {
       await submitClatRegistration({
         name: name.trim(),
         whatsapp: whatsapp.trim(),
+        email: trimmedEmail,
         mockScore,
         question,
         questionOther: question === "other" ? questionOther.trim() : "",
@@ -86,6 +93,24 @@ export function ClatLiveForm() {
           placeholder="10-digit mobile number"
           value={whatsapp}
           onChange={(event) => setWhatsapp(event.target.value)}
+          className={fieldClass}
+          required
+        />
+      </div>
+
+      <div>
+        <label htmlFor="clat-email" className={labelClass}>
+          Email
+        </label>
+        <input
+          id="clat-email"
+          name="email"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          placeholder="you@example.com"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
           className={fieldClass}
           required
         />
