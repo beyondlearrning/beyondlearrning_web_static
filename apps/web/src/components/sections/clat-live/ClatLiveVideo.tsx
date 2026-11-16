@@ -19,7 +19,7 @@ export function ClatLiveVideo() {
   return (
     <video
       key={src}
-      className="aspect-video w-full bg-brand object-cover"
+      className="aspect-[9/16] h-full max-h-[min(70vh,36rem)] w-full bg-brand object-contain"
       controls
       playsInline
       preload="metadata"
@@ -33,9 +33,9 @@ export function ClatLiveVideo() {
 
 function VideoPlaceholder() {
   return (
-    <div className="flex aspect-video items-center justify-center bg-[linear-gradient(145deg,#1e3a2b_0%,#2f5340_55%,#1e3a2b_100%)] px-8 text-center">
-      <p className="max-w-sm font-display text-2xl leading-snug text-background/90 sm:text-3xl">
-        30-second intro
+    <div className="flex aspect-[9/16] max-h-[min(70vh,36rem)] w-full items-center justify-center bg-[linear-gradient(145deg,#1e3a2b_0%,#2f5340_55%,#1e3a2b_100%)] px-6 text-center">
+      <p className="max-w-[12rem] font-display text-xl leading-snug text-background/90 sm:text-2xl">
+        Portrait intro
         <span className="mt-3 block font-sans text-sm tracking-wide text-background/65">
           Add `public/videos/clat-live/register-now.mp4` to publish the clip.
         </span>

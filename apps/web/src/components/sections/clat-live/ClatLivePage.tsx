@@ -39,8 +39,8 @@ export function ClatLivePage() {
             </Reveal>
           </div>
 
-          <Reveal delay={220} className="mx-auto mt-12 max-w-3xl">
-            <div className="overflow-hidden border border-border bg-brand/95 shadow-[0_24px_60px_-28px_rgba(30,58,43,0.45)]">
+          <Reveal delay={220} className="mx-auto mt-12 flex max-w-3xl justify-center">
+            <div className="w-full max-w-[22rem] overflow-hidden border border-border bg-brand/95 shadow-[0_24px_60px_-28px_rgba(30,58,43,0.45)] sm:max-w-[24rem]">
               <ClatLiveVideo />
             </div>
             <p className="mx-auto mt-6 max-w-lg text-center text-[0.95rem] leading-relaxed text-muted">
