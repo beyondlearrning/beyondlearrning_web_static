@@ -46,7 +46,7 @@ export function ClatLivePage() {
             <div className="w-full max-w-[20rem] overflow-hidden border border-border bg-black shadow-[0_24px_60px_-28px_rgba(30,58,43,0.45)] sm:max-w-[22rem]">
               <ClatLiveVideo />
             </div>
-            <p className="mt-6 max-w-lg text-center text-lg font-semibold leading-snug text-brand sm:text-xl">
+            <p className="mt-7 max-w-xl text-center font-display text-[1.35rem] leading-[1.35] font-medium tracking-[-0.01em] text-balance text-brand sm:text-[1.65rem] sm:leading-[1.3]">
               {clatLive.videoPrompt}
             </p>
           </Reveal>
