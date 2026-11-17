@@ -24,7 +24,7 @@ export function AdminSubmissions() {
   const [password, setPassword] = useState("");
   const [unlocked, setUnlocked] = useState(false);
   const [items, setItems] = useState<ClatRegistration[]>([]);
-  const [source, setSource] = useState<"api" | "local" | null>(null);
+  const [source, setSource] = useState<"firestore" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [whatsappGroupHref, setWhatsappGroupHref] = useState("");
@@ -113,11 +113,7 @@ export function AdminSubmissions() {
         whatsappGroupHref,
       });
       setWhatsappGroupHref(result.settings.whatsappGroupHref);
-      setSettingsMessage(
-        result.source === "local"
-          ? "Saved for local preview."
-          : "WhatsApp group link saved.",
-      );
+      setSettingsMessage("WhatsApp group link saved to Firestore.");
     } catch (saveError) {
       setSettingsError(
         saveError instanceof Error
@@ -222,8 +218,9 @@ export function AdminSubmissions() {
             </button>
           </form>
           <p className="mt-5 text-xs leading-relaxed text-muted">
-            Default password:{" "}
+            Password:{" "}
             <code className="text-brand">{LOCAL_ADMIN_PASSWORD}</code>
+            {" · "}Leads stored in Firebase Firestore
           </p>
         </div>
       </div>
@@ -243,13 +240,7 @@ export function AdminSubmissions() {
               <>
                 {" "}
                 ·{" "}
-                <span
-                  className={cn(
-                    source === "local" ? "text-amber-800" : "text-brand/70",
-                  )}
-                >
-                  {source === "local" ? "local preview" : "live store"}
-                </span>
+                <span className="text-brand/70">Firestore</span>
               </>
             ) : null}
           </p>

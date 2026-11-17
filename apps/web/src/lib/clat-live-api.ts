@@ -1,3 +1,20 @@
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  orderBy,
+  query,
+  setDoc,
+  Timestamp,
+} from "firebase/firestore";
+import {
+  firestoreCollections,
+  getDb,
+  settingsDocId,
+} from "@/lib/firebase";
+
 export type ClatRegistration = {
   id: string;
   name: string;
@@ -17,190 +34,143 @@ export type ClatRegistrationInput = Omit<
   "id" | "createdAt" | "city" | "email"
 > & { email: string };
 
-const STORAGE_KEY = "beyond-clat-live-registrations";
-const SETTINGS_KEY = "beyond-clat-live-settings";
-
-/** Local preview password when Netlify Functions are unavailable (`pnpm dev`). */
+/** Admin panel password (UI gate). Change in Netlify env later if needed. */
 export const LOCAL_ADMIN_PASSWORD = "beyond2027";
 
 export type ClatLiveSettings = {
   whatsappGroupHref: string;
 };
 
-function readLocalSettings(): ClatLiveSettings {
-  if (typeof window === "undefined") return { whatsappGroupHref: "" };
-  try {
-    const raw = window.localStorage.getItem(SETTINGS_KEY);
-    if (!raw) return { whatsappGroupHref: "" };
-    const parsed = JSON.parse(raw) as ClatLiveSettings;
-    return {
-      whatsappGroupHref:
-        typeof parsed.whatsappGroupHref === "string"
-          ? parsed.whatsappGroupHref
-          : "",
-    };
-  } catch {
-    return { whatsappGroupHref: "" };
+function assertAdminPassword(password: string) {
+  if (password !== LOCAL_ADMIN_PASSWORD) {
+    throw new Error("Invalid password");
   }
 }
 
-function writeLocalSettings(settings: ClatLiveSettings) {
-  window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-}
-
-function readLocal(): ClatRegistration[] {
-  if (typeof window === "undefined") return [];
+function isValidWhatsAppGroupUrl(value: string): boolean {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as ClatRegistration[];
-    return Array.isArray(parsed) ? parsed : [];
+    const url = new URL(value);
+    return (
+      (url.protocol === "https:" || url.protocol === "http:") &&
+      (url.hostname === "chat.whatsapp.com" ||
+        url.hostname === "wa.me" ||
+        url.hostname.endsWith(".whatsapp.com"))
+    );
   } catch {
-    return [];
+    return false;
   }
 }
 
-function writeLocal(items: ClatRegistration[]) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+function createdAtToIso(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (value instanceof Timestamp) return value.toDate().toISOString();
+  if (
+    value &&
+    typeof value === "object" &&
+    "toDate" in value &&
+    typeof (value as { toDate: () => Date }).toDate === "function"
+  ) {
+    return (value as { toDate: () => Date }).toDate().toISOString();
+  }
+  return new Date().toISOString();
 }
 
-function toLocalEntry(input: ClatRegistrationInput): ClatRegistration {
-  return {
-    ...input,
-    id:
-      typeof crypto !== "undefined" && "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : `local-${Date.now()}`,
-    createdAt: new Date().toISOString(),
-  };
-}
-
-/** Persist a registration via Netlify Function, with localStorage fallback for `next dev`. */
+/** Persist a registration to Cloud Firestore. */
 export async function submitClatRegistration(
   input: ClatRegistrationInput,
-): Promise<{ source: "api" | "local" }> {
-  try {
-    const response = await fetch("/api/clat-register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
-    });
-    if (response.ok) return { source: "api" };
-  } catch {
-    // Fall through to local storage when functions are offline.
-  }
+): Promise<{ source: "firestore" }> {
+  const payload = {
+    name: input.name.trim(),
+    whatsapp: input.whatsapp.trim(),
+    email: input.email.trim().toLowerCase(),
+    mockScore: input.mockScore,
+    question: input.question,
+    questionOther: input.questionOther.trim(),
+    createdAt: Timestamp.now(),
+  };
 
-  const items = readLocal();
-  items.unshift(toLocalEntry(input));
-  writeLocal(items);
-  return { source: "local" };
+  await addDoc(collection(getDb(), firestoreCollections.registrations), payload);
+  return { source: "firestore" };
 }
 
 export async function listClatRegistrations(
   password: string,
-): Promise<{ items: ClatRegistration[]; source: "api" | "local" }> {
-  try {
-    const response = await fetch("/api/clat-registrations", {
-      headers: { "x-admin-password": password },
-    });
-    if (response.ok) {
-      const data = (await response.json()) as { items: ClatRegistration[] };
-      return { items: data.items ?? [], source: "api" };
-    }
-    if (response.status === 401) {
-      throw new Error("Invalid password");
-    }
-  } catch (error) {
-    if (error instanceof Error && error.message === "Invalid password") {
-      throw error;
-    }
-  }
+): Promise<{ items: ClatRegistration[]; source: "firestore" }> {
+  assertAdminPassword(password);
 
-  if (password !== LOCAL_ADMIN_PASSWORD) {
-    throw new Error("Invalid password");
-  }
+  const snapshot = await getDocs(
+    query(
+      collection(getDb(), firestoreCollections.registrations),
+      orderBy("createdAt", "desc"),
+    ),
+  );
 
-  return { items: readLocal(), source: "local" };
+  const items: ClatRegistration[] = snapshot.docs.map((entry) => {
+    const data = entry.data();
+    return {
+      id: entry.id,
+      name: String(data.name ?? ""),
+      whatsapp: String(data.whatsapp ?? ""),
+      email: data.email ? String(data.email) : undefined,
+      city: data.city ? String(data.city) : undefined,
+      mockScore: String(data.mockScore ?? ""),
+      question: String(data.question ?? ""),
+      questionOther: String(data.questionOther ?? ""),
+      createdAt: createdAtToIso(data.createdAt),
+    };
+  });
+
+  return { items, source: "firestore" };
 }
 
 /** Public settings used by the thanks page (WhatsApp group invite). */
 export async function getClatLiveSettings(): Promise<{
   settings: ClatLiveSettings;
-  source: "api" | "local";
+  source: "firestore";
 }> {
-  try {
-    const response = await fetch("/api/clat-settings", { cache: "no-store" });
-    if (response.ok) {
-      const data = (await response.json()) as ClatLiveSettings;
-      return {
-        settings: {
-          whatsappGroupHref: data.whatsappGroupHref?.trim() || "",
-        },
-        source: "api",
-      };
-    }
-  } catch {
-    // Fall through to local storage when functions are offline.
-  }
+  const snap = await getDoc(
+    doc(getDb(), firestoreCollections.settings, settingsDocId),
+  );
+  const data = snap.exists() ? snap.data() : null;
 
-  return { settings: readLocalSettings(), source: "local" };
+  return {
+    settings: {
+      whatsappGroupHref:
+        typeof data?.whatsappGroupHref === "string"
+          ? data.whatsappGroupHref.trim()
+          : "",
+    },
+    source: "firestore",
+  };
 }
 
 export async function saveClatLiveSettings(
   password: string,
   settings: ClatLiveSettings,
-): Promise<{ settings: ClatLiveSettings; source: "api" | "local" }> {
+): Promise<{ settings: ClatLiveSettings; source: "firestore" }> {
+  assertAdminPassword(password);
+
   const whatsappGroupHref = settings.whatsappGroupHref.trim();
   if (!whatsappGroupHref) {
     throw new Error("Paste a WhatsApp group invite link.");
   }
-
-  try {
-    const response = await fetch("/api/clat-settings", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "x-admin-password": password,
-      },
-      body: JSON.stringify({ whatsappGroupHref }),
-    });
-    if (response.ok) {
-      const data = (await response.json()) as ClatLiveSettings;
-      return {
-        settings: {
-          whatsappGroupHref: data.whatsappGroupHref?.trim() || whatsappGroupHref,
-        },
-        source: "api",
-      };
-    }
-    if (response.status === 401) {
-      throw new Error("Invalid password");
-    }
-    if (response.status === 400) {
-      const data = (await response.json().catch(() => null)) as {
-        error?: string;
-      } | null;
-      throw new Error(data?.error || "Invalid WhatsApp group link.");
-    }
-  } catch (error) {
-    if (
-      error instanceof Error &&
-      (error.message === "Invalid password" ||
-        error.message.startsWith("Paste") ||
-        error.message.startsWith("Invalid") ||
-        error.message.startsWith("Use a valid"))
-    ) {
-      throw error;
-    }
+  if (!isValidWhatsAppGroupUrl(whatsappGroupHref)) {
+    throw new Error("Use a valid WhatsApp invite link (chat.whatsapp.com).");
   }
 
-  if (password !== LOCAL_ADMIN_PASSWORD) {
-    throw new Error("Invalid password");
-  }
+  await setDoc(
+    doc(getDb(), firestoreCollections.settings, settingsDocId),
+    {
+      whatsappGroupHref,
+      updatedAt: Timestamp.now(),
+    },
+    { merge: true },
+  );
 
-  const next = { whatsappGroupHref };
-  writeLocalSettings(next);
-  return { settings: next, source: "local" };
+  return {
+    settings: { whatsappGroupHref },
+    source: "firestore",
+  };
 }
 
 export function mockScoreLabel(value: string): string {

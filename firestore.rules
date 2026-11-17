@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // CLAT live lead form submissions
+    match /clatLiveRegistrations/{docId} {
+      allow create: if
+        request.resource.data.keys().hasAll([
+          'name', 'whatsapp', 'email', 'mockScore', 'question', 'questionOther', 'createdAt'
+        ])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() < 120
+        && request.resource.data.whatsapp is string
+        && request.resource.data.whatsapp.size() > 5
+        && request.resource.data.whatsapp.size() < 40
+        && request.resource.data.email is string
+        && request.resource.data.email.size() > 3
+        && request.resource.data.email.size() < 200
+        && request.resource.data.mockScore is string
+        && request.resource.data.question is string
+        && request.resource.data.questionOther is string
+        && request.resource.data.createdAt is timestamp
+        && !('id' in request.resource.data);
+      // Admin panel reads via client SDK (password is UI-only).
+      // Tighten later with Firebase Auth if needed.
+      allow read: if true;
+      allow update, delete: if false;
+    }
+
+    // WhatsApp group invite used on the thanks page
+    match /clatLiveSettings/{docId} {
+      allow read: if true;
+      allow create, update: if
+        request.resource.data.keys().hasAny(['whatsappGroupHref'])
+        && request.resource.data.whatsappGroupHref is string
+        && request.resource.data.whatsappGroupHref.size() > 10
+        && request.resource.data.whatsappGroupHref.size() < 500;
+      allow delete: if false;
+    }
+  }
+}
