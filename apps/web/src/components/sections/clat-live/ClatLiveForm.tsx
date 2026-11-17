@@ -13,9 +13,35 @@ import { submitClatRegistration } from "@/lib/clat-live-api";
 import { cn } from "@/lib/utils";
 
 const fieldClass =
-  "mt-2 w-full border border-border bg-surface px-4 py-3 text-sm text-brand outline-none transition-colors placeholder:text-muted/70 focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+  "mt-2 w-full border bg-surface px-4 py-3 text-sm text-brand outline-none transition-colors placeholder:text-muted/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
 const labelClass = "text-xs font-semibold tracking-[0.18em] text-muted uppercase";
+
+/** Accepts 10-digit Indian mobiles, optionally with +91 / 91 / 0. */
+function normalizeIndianMobile(raw: string): string | null {
+  const digits = raw.replace(/\D/g, "");
+  let mobile = digits;
+  if (mobile.startsWith("91") && mobile.length === 12) {
+    mobile = mobile.slice(2);
+  } else if (mobile.startsWith("0") && mobile.length === 11) {
+    mobile = mobile.slice(1);
+  }
+  if (!/^[6-9]\d{9}$/.test(mobile)) return null;
+  return mobile;
+}
+
+function isValidEmail(value: string): boolean {
+  if (value.length < 5 || value.length > 200) return false;
+  if (value.includes("..") || value.includes(" ")) return false;
+  return /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$/.test(
+    value,
+  );
+}
+
+type FieldErrors = {
+  whatsapp?: string;
+  email?: string;
+};
 
 export function ClatLiveForm() {
   const router = useRouter();
@@ -26,6 +52,7 @@ export function ClatLiveForm() {
   const [question, setQuestion] = useState<QuestionValue | "">("");
   const [questionOther, setQuestionOther] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [pending, setPending] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -33,12 +60,27 @@ export function ClatLiveForm() {
     setError(null);
 
     const trimmedEmail = email.trim();
-    if (!name.trim() || !whatsapp.trim() || !trimmedEmail || !mockScore || !question) {
-      setError("Please fill in every field.");
+    const normalizedMobile = normalizeIndianMobile(whatsapp);
+    const nextFieldErrors: FieldErrors = {};
+
+    if (!normalizedMobile) {
+      nextFieldErrors.whatsapp =
+        "Enter a valid 10-digit Indian mobile number (starts with 6–9).";
+    }
+    if (!trimmedEmail) {
+      nextFieldErrors.email = "Email is required.";
+    } else if (!isValidEmail(trimmedEmail)) {
+      nextFieldErrors.email = "Enter a valid email address (e.g. name@gmail.com).";
+    }
+
+    setFieldErrors(nextFieldErrors);
+
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setError("Please fix the highlighted fields.");
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      setError("Please enter a valid email address.");
+    if (!name.trim() || !mockScore || !question) {
+      setError("Please fill in every field.");
       return;
     }
     if (question === "other" && !questionOther.trim()) {
@@ -50,8 +92,8 @@ export function ClatLiveForm() {
     try {
       await submitClatRegistration({
         name: name.trim(),
-        whatsapp: whatsapp.trim(),
-        email: trimmedEmail,
+        whatsapp: normalizedMobile!,
+        email: trimmedEmail.toLowerCase(),
         mockScore,
         question,
         questionOther: question === "other" ? questionOther.trim() : "",
@@ -75,7 +117,7 @@ export function ClatLiveForm() {
           autoComplete="name"
           value={name}
           onChange={(event) => setName(event.target.value)}
-          className={fieldClass}
+          className={cn(fieldClass, "border-border focus:border-accent")}
           required
         />
       </div>
@@ -88,14 +130,37 @@ export function ClatLiveForm() {
           id="clat-whatsapp"
           name="whatsapp"
           type="tel"
-          inputMode="tel"
+          inputMode="numeric"
           autoComplete="tel"
           placeholder="10-digit mobile number"
           value={whatsapp}
-          onChange={(event) => setWhatsapp(event.target.value)}
-          className={fieldClass}
+          onChange={(event) => {
+            setWhatsapp(event.target.value);
+            if (fieldErrors.whatsapp) {
+              setFieldErrors((current) => ({ ...current, whatsapp: undefined }));
+            }
+          }}
+          aria-invalid={Boolean(fieldErrors.whatsapp)}
+          aria-describedby={
+            fieldErrors.whatsapp ? "clat-whatsapp-error" : undefined
+          }
+          className={cn(
+            fieldClass,
+            fieldErrors.whatsapp
+              ? "border-red-700 focus:border-red-700"
+              : "border-border focus:border-accent",
+          )}
           required
         />
+        {fieldErrors.whatsapp ? (
+          <p id="clat-whatsapp-error" className="mt-2 text-sm text-red-800" role="alert">
+            {fieldErrors.whatsapp}
+          </p>
+        ) : (
+          <p className="mt-2 text-xs text-muted">
+            Use your 10-digit number. +91 is fine.
+          </p>
+        )}
       </div>
 
       <div>
@@ -110,10 +175,27 @@ export function ClatLiveForm() {
           autoComplete="email"
           placeholder="you@example.com"
           value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          className={fieldClass}
+          onChange={(event) => {
+            setEmail(event.target.value);
+            if (fieldErrors.email) {
+              setFieldErrors((current) => ({ ...current, email: undefined }));
+            }
+          }}
+          aria-invalid={Boolean(fieldErrors.email)}
+          aria-describedby={fieldErrors.email ? "clat-email-error" : undefined}
+          className={cn(
+            fieldClass,
+            fieldErrors.email
+              ? "border-red-700 focus:border-red-700"
+              : "border-border focus:border-accent",
+          )}
           required
         />
+        {fieldErrors.email ? (
+          <p id="clat-email-error" className="mt-2 text-sm text-red-800" role="alert">
+            {fieldErrors.email}
+          </p>
+        ) : null}
       </div>
 
       <div>
@@ -127,7 +209,10 @@ export function ClatLiveForm() {
           onChange={(event) =>
             setMockScore(event.target.value as MockScoreValue | "")
           }
-          className={cn(fieldClass, "appearance-none bg-[length:1rem] pr-10")}
+          className={cn(
+            fieldClass,
+            "appearance-none border-border bg-[length:1rem] pr-10 focus:border-accent",
+          )}
           required
         >
           <option value="" disabled>
@@ -184,7 +269,10 @@ export function ClatLiveForm() {
               value={questionOther}
               onChange={(event) => setQuestionOther(event.target.value)}
               placeholder="Type your question here"
-              className={cn(fieldClass, "resize-y")}
+              className={cn(
+                fieldClass,
+                "resize-y border-border focus:border-accent",
+              )}
               required
             />
           </div>
