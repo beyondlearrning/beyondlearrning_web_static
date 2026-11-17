@@ -17,17 +17,24 @@ const fieldClass =
 
 const labelClass = "text-xs font-semibold tracking-[0.18em] text-muted uppercase";
 
-/** Accepts 10-digit Indian mobiles, optionally with +91 / 91 / 0. */
-function normalizeIndianMobile(raw: string): string | null {
-  const digits = raw.replace(/\D/g, "");
-  let mobile = digits;
-  if (mobile.startsWith("91") && mobile.length === 12) {
-    mobile = mobile.slice(2);
-  } else if (mobile.startsWith("0") && mobile.length === 11) {
-    mobile = mobile.slice(1);
-  }
-  if (!/^[6-9]\d{9}$/.test(mobile)) return null;
-  return mobile;
+const countryCodes = [
+  { value: "91", label: "+91 India" },
+  { value: "971", label: "+971 UAE" },
+  { value: "977", label: "+977 Nepal" },
+  { value: "1", label: "+1 US/CA" },
+  { value: "44", label: "+44 UK" },
+] as const;
+
+type CountryCode = (typeof countryCodes)[number]["value"];
+
+function digitsOnlyMax10(raw: string): string {
+  return raw.replace(/\D/g, "").slice(0, 10);
+}
+
+function isValidLocalMobile(countryCode: CountryCode, mobile: string): boolean {
+  if (mobile.length !== 10) return false;
+  if (countryCode === "91") return /^[6-9]\d{9}$/.test(mobile);
+  return /^\d{10}$/.test(mobile);
 }
 
 function isValidEmail(value: string): boolean {
@@ -46,6 +53,7 @@ type FieldErrors = {
 export function ClatLiveForm() {
   const router = useRouter();
   const [name, setName] = useState("");
+  const [countryCode, setCountryCode] = useState<CountryCode>("91");
   const [whatsapp, setWhatsapp] = useState("");
   const [email, setEmail] = useState("");
   const [mockScore, setMockScore] = useState<MockScoreValue | "">("");
@@ -60,12 +68,14 @@ export function ClatLiveForm() {
     setError(null);
 
     const trimmedEmail = email.trim();
-    const normalizedMobile = normalizeIndianMobile(whatsapp);
+    const mobile = digitsOnlyMax10(whatsapp);
     const nextFieldErrors: FieldErrors = {};
 
-    if (!normalizedMobile) {
+    if (!isValidLocalMobile(countryCode, mobile)) {
       nextFieldErrors.whatsapp =
-        "Enter a valid 10-digit Indian mobile number (starts with 6–9).";
+        countryCode === "91"
+          ? "Enter a valid 10-digit Indian mobile number (starts with 6–9)."
+          : "Enter a valid 10-digit mobile number.";
     }
     if (!trimmedEmail) {
       nextFieldErrors.email = "Email is required.";
@@ -92,7 +102,7 @@ export function ClatLiveForm() {
     try {
       await submitClatRegistration({
         name: name.trim(),
-        whatsapp: normalizedMobile!,
+        whatsapp: `+${countryCode}${mobile}`,
         email: trimmedEmail.toLowerCase(),
         mockScore,
         question,
@@ -126,39 +136,68 @@ export function ClatLiveForm() {
         <label htmlFor="clat-whatsapp" className={labelClass}>
           WhatsApp number
         </label>
-        <input
-          id="clat-whatsapp"
-          name="whatsapp"
-          type="tel"
-          inputMode="numeric"
-          autoComplete="tel"
-          placeholder="10-digit mobile number"
-          value={whatsapp}
-          onChange={(event) => {
-            setWhatsapp(event.target.value);
-            if (fieldErrors.whatsapp) {
-              setFieldErrors((current) => ({ ...current, whatsapp: undefined }));
+        <div className="mt-2 flex gap-2">
+          <label className="sr-only" htmlFor="clat-country-code">
+            Country code
+          </label>
+          <select
+            id="clat-country-code"
+            name="countryCode"
+            value={countryCode}
+            onChange={(event) =>
+              setCountryCode(event.target.value as CountryCode)
             }
-          }}
-          aria-invalid={Boolean(fieldErrors.whatsapp)}
-          aria-describedby={
-            fieldErrors.whatsapp ? "clat-whatsapp-error" : undefined
-          }
-          className={cn(
-            fieldClass,
-            fieldErrors.whatsapp
-              ? "border-red-700 focus:border-red-700"
-              : "border-border focus:border-accent",
-          )}
-          required
-        />
+            className={cn(
+              "w-[8.5rem] shrink-0 border bg-surface px-2 py-3 text-sm text-brand outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+              fieldErrors.whatsapp
+                ? "border-red-700"
+                : "border-border focus:border-accent",
+            )}
+          >
+            {countryCodes.map((code) => (
+              <option key={code.value} value={code.value}>
+                {code.label}
+              </option>
+            ))}
+          </select>
+          <input
+            id="clat-whatsapp"
+            name="whatsapp"
+            type="tel"
+            inputMode="numeric"
+            autoComplete="tel-national"
+            placeholder="10-digit number"
+            maxLength={10}
+            value={whatsapp}
+            onChange={(event) => {
+              setWhatsapp(digitsOnlyMax10(event.target.value));
+              if (fieldErrors.whatsapp) {
+                setFieldErrors((current) => ({
+                  ...current,
+                  whatsapp: undefined,
+                }));
+              }
+            }}
+            aria-invalid={Boolean(fieldErrors.whatsapp)}
+            aria-describedby={
+              fieldErrors.whatsapp ? "clat-whatsapp-error" : "clat-whatsapp-help"
+            }
+            className={cn(
+              "min-w-0 flex-1 border bg-surface px-4 py-3 text-sm text-brand outline-none transition-colors placeholder:text-muted/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+              fieldErrors.whatsapp
+                ? "border-red-700 focus:border-red-700"
+                : "border-border focus:border-accent",
+            )}
+            required
+          />
+        </div>
         {fieldErrors.whatsapp ? (
           <p id="clat-whatsapp-error" className="mt-2 text-sm text-red-800" role="alert">
             {fieldErrors.whatsapp}
           </p>
         ) : (
-          <p className="mt-2 text-xs text-muted">
-            Use your 10-digit number. +91 is fine.
+          <p id="clat-whatsapp-help" className="mt-2 text-xs text-muted">
+            Exactly 10 digits. Country code is selected separately.
           </p>
         )}
       </div>
