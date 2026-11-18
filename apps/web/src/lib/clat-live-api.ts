@@ -34,8 +34,8 @@ export type ClatRegistrationInput = Omit<
   "id" | "createdAt" | "city" | "email"
 > & { email: string };
 
-/** Admin panel password (UI gate). Change in Netlify env later if needed. */
-export const LOCAL_ADMIN_PASSWORD = "beyond2027";
+/** Admin panel password (UI gate). */
+export const LOCAL_ADMIN_PASSWORD = "Devira@24";
 
 export type ClatLiveSettings = {
   whatsappGroupHref: string;

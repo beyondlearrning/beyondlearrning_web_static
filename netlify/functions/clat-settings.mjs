@@ -50,7 +50,7 @@ export default async (request) => {
   }
 
   if (request.method === "PUT") {
-    const expected = process.env.CLAT_ADMIN_PASSWORD || "beyond2027";
+    const expected = process.env.CLAT_ADMIN_PASSWORD || "Devira@24";
     const provided = request.headers.get("x-admin-password") ?? "";
     if (!provided || provided !== expected) {
       return json(401, { error: "Unauthorized" });

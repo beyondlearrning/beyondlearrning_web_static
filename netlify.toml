@@ -16,7 +16,7 @@
   # Required for Next.js + pnpm on Netlify (see also root .npmrc)
   PNPM_FLAGS = "--shamefully-hoist"
   # Override in Netlify UI → Environment variables for production.
-  CLAT_ADMIN_PASSWORD = "beyond2027"
+  CLAT_ADMIN_PASSWORD = "Devira@24"
 
 [functions]
   directory = "netlify/functions"

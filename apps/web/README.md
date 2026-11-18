@@ -39,4 +39,4 @@ To run a command for this app only, use `pnpm --filter web <script>`.
 - `src/content/clat-live.ts` — CLAT live Q&A landing copy, form options, WhatsApp group link, video slot
 - `public/videos/clat-live/` — optional promo clip (`promo.mp4` / `promo.webm`)
 - `public` — static assets
-- `/clat-live` — session registration form; `/clat-live/thanks` after submit; `/admin` submissions panel (password `beyond2027` locally; set `CLAT_ADMIN_PASSWORD` on Netlify)
+- `/clat-live` — session registration form; `/clat-live/thanks` after submit; `/admin` submissions panel (set `CLAT_ADMIN_PASSWORD` on Netlify)

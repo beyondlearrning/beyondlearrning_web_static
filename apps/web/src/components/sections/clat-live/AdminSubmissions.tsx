@@ -10,7 +10,6 @@ import {
 import {
   getClatLiveSettings,
   listClatRegistrations,
-  LOCAL_ADMIN_PASSWORD,
   mockScoreLabel,
   questionLabel,
   saveClatLiveSettings,
@@ -218,9 +217,7 @@ export function AdminSubmissions() {
             </button>
           </form>
           <p className="mt-5 text-xs leading-relaxed text-muted">
-            Password:{" "}
-            <code className="text-brand">{LOCAL_ADMIN_PASSWORD}</code>
-            {" · "}Leads stored in Firebase Firestore
+            Leads stored in Firebase Firestore
           </p>
         </div>
       </div>
