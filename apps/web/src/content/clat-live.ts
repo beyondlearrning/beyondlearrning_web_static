@@ -12,6 +12,7 @@ export const clatLive = {
   subline:
     "A free live session with Nupur Dhaneriya, Founder, Beyond Learrning.",
   /** Exact clock times TBA — update when confirmed. */
+  /** Confirmed session time. */
   schedule: "21 & 22 Nov · 5 PM · Google Meet",
   videoPrompt:
     "Bring your biggest CLAT question. Get a straight answer in 2 minutes.",
