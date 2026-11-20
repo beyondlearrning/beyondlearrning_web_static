@@ -1,0 +1,38 @@
+# Beyond Learrning — Hostinger / Apache static hosting
+# Place this in the site document root (public_html) with the build files.
+
+Options -MultiViews
+RewriteEngine On
+RewriteBase /
+
+# Force HTTPS (recommended on Hostinger)
+RewriteCond %{HTTPS} !=on
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Prefer trailing-slash directory indexes when a folder exists
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^(.+[^/])$ $1/ [L,R=301]
+
+# Serve clean URLs: /about → /about.html (Next.js static export)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}.html -f
+RewriteRule ^(.+?)/?$ $1.html [L]
+
+# SPA-style fallback for missing paths
+ErrorDocument 404 /404.html
+
+# Cache hashed Next.js assets
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|css|woff2?|png|jpg|jpeg|webp|avif|svg|ico|mp4|webm)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "\.(html|txt)$">
+    Header set Cache-Control "public, max-age=0, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+# Gzip (if available)
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/css application/javascript application/json image/svg+xml
+</IfModule>

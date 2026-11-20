@@ -6,6 +6,10 @@ netlify/functions/node_modules/
 .next/
 out/
 
+# Hostinger upload packages (generated locally)
+hostinger-build/
+hostinger-build.zip
+
 # Environment files
 .env
 .env.local
